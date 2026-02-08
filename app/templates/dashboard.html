@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="col-md-4">
+      <div class="d-grid gap-2 mb-4">
+        <a class="btn btn-primary btn-lg" href="/classify">Go to Classifier</a>
+      </div>
+    </div>
+<div class="container-fluid px-0">
+  <div class="edge-hero row g-0">
+    <div class="col-lg-8 hero-tile p-4">
+      {% if trending_news and trending_news|length > 0 %}
+        {% set hero_image = url_for('classify.image_proxy', url=trending_news[0].image) if trending_news[0].image else '/static/hero.jpg' %}
+        <div class="hero-content h-100 d-flex flex-column justify-content-end text-white p-4 rounded" style="background: linear-gradient(0deg, rgba(0,0,0,0.45), rgba(0,0,0,0.15)), url('{{ hero_image }}') center/cover;">
+          <a href="{{ trending_news[0].url }}" target="_blank" style="color: inherit; text-decoration: none;">
+            <h2 class="fw-bold">{{ trending_news[0].title }}</h2>
+          </a>
+          <p class="lead">{{ trending_news[0].text[:220] }}{% if trending_news[0].text|length > 220 %}...{% endif %}</p>
+          <div>
+            <button class="btn btn-light btn-sm me-2" onclick="openInClassifier(`{{ trending_news[0].text | escape }}`)">Quick Classify</button>
+            <a class="btn btn-outline-light btn-sm" href="{{ trending_news[0].url }}" target="_blank">Read Source</a>
+          </div>
+        </div>
+      {% else %}
+        <div class="hero-content h-100 d-flex align-items-center justify-content-center bg-light rounded p-4">
+          <div class="text-center">
+            <h3>No trending news available</h3>
+            <p class="text-muted">Try again later or configure `TRENDING_NEWS_API_URL`.</p>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+    <div class="col-lg-4 p-3">
+      <div class="row row-cols-1 row-cols-md-1 g-3">
+        {% for item in trending_news[1:5] %}
+        <div class="col">
+          <div class="card small-card h-100">
+            <div class="card-body d-flex align-items-start gap-3">
+              {% if item.image %}
+                <img src="{{ url_for('classify.image_proxy', url=item.image) }}" alt="{{ item.title }}" class="trending-thumb-sm rounded">
+              {% endif %}
+              <div class="d-flex flex-column flex-grow-1">
+                <a href="{{ item.url }}" target="_blank" style="color: inherit; text-decoration: none;">
+                  <h6 class="card-title mb-1">{{ item.title }}</h6>
+                </a>
+                <p class="card-text text-muted small mb-3">{{ item.text[:100] }}{% if item.text|length > 100 %}...{% endif %}</p>
+                <div class="mt-auto d-flex justify-content-between align-items-center">
+                  <button class="btn btn-sm btn-primary" onclick="openInClassifier(`{{ item.text | escape }}`)">Quick Classify</button>
+                  <a class="text-muted small" href="{{ item.url }}" target="_blank">Open →</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="row mt-4">
+    <div class="col-md-8">
+      <h4>Recent Activity</h4>
+      {% if current_user.is_authenticated and recent_results %}
+        <div class="list-group">
+          {% for r in recent_results %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <strong>{{ r.predicted_category }}</strong>
+                <div class="small text-muted">{{ r.article_text[:80] }}{% if r.article_text|length > 80 %}...{% endif %}</div>
+              </div>
+              <div class="text-end">
+                <div class="small">{{ "%.1f"|format(r.fake_confidence * 100 if r.fake_confidence else 0) }}%</div>
+                <div class="small text-muted">{{ r.timestamp.strftime('%Y-%m-%d') }}</div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="alert alert-info">No recent activity.</div>
+      {% endif %}
+    </div>
+    
+  </div>
+
+  <!-- Article modal -->
+  <div class="modal fade" id="articleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="articleModalTitle">Article</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="articleModalBody" style="white-space: pre-line;"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" id="modalQuickClassify">Quick Classify</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function openInClassifier(text) {
+  try { localStorage.setItem('quick_article', text); } catch(e){}
+  window.location.href = '/classify';
+}
+
+function openArticleModal(title, text) {
+  const modalTitle = document.getElementById('articleModalTitle');
+  const modalBody = document.getElementById('articleModalBody');
+  modalTitle.textContent = title;
+  modalBody.textContent = text;
+  const quickBtn = document.getElementById('modalQuickClassify');
+  quickBtn.onclick = function(){ openInClassifier(text); };
+  var modal = new bootstrap.Modal(document.getElementById('articleModal'));
+  modal.show();
+}
+</script>
+
+<style>
+.edge-hero { min-height: 320px; }
+.hero-tile { padding: 0; }
+.hero-content { background-size: cover; border-radius: 8px; }
+.small-card { border-radius: 8px; }
+.small-card .card-body { min-height: 120px; }
+@media (max-width: 768px) {
+  .edge-hero { flex-direction: column; }
+}
+</style>
+
+{% endblock %}

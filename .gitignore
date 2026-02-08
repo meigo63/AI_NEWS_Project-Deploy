@@ -1,0 +1,18 @@
+# البيئة الافتراضية
+.venv/
+env/
+
+# ملفات بايثون المؤقتة
+__pycache__/
+*.pyc
+
+# إعدادات المحرر
+.vscode/
+
+# البيانات (لأنها عادة تكون ضخمة)
+Raw_data_files/
+Processed_data/
+processed_data1/
+
+# Files to ignore 
+
